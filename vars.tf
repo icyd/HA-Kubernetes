@@ -1,6 +1,6 @@
 variable "GCP_PROJECT_ID" {
   description = "GCP project id."
-  default     = ""
+  default     = "kubespray-294313"
 }
 
 variable "GCP_REGION" {
@@ -15,12 +15,12 @@ variable "GCP_ZONE" {
 
 variable "GCP_IMAGE" {
   description = "Compute instance image."
-  default     = "debian-cloud/debian-10"
+  default     = "ubuntu-os-cloud/ubuntu-1804-lts"
 }
 
 variable "master_count" {
   description = "Number of master nodes."
-  default     = 2
+  default     = 3
 }
 
 variable "worker_count" {
@@ -33,9 +33,14 @@ variable "cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable ssh_keys {
+variable "ssh_keys" {
   description = "Name of the public ssh key file."
   default = {
     "admin" = "ssh_key.pub"
   }
+}
+
+variable "bastion_enabled" {
+  description = "Whether or not to deploy bastion host."
+  default     = false
 }

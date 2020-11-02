@@ -5,7 +5,7 @@ resource "google_compute_instance" "master" {
   name           = "master-${count.index}"
   machine_type   = "n1-standard-2"
   zone           = "${var.GCP_REGION}-b"
-  can_ip_forward = false
+  can_ip_forward = true
   tags           = ["controlplane", "k8s", "master"]
 
   boot_disk {
@@ -17,7 +17,8 @@ resource "google_compute_instance" "master" {
 
   network_interface {
     subnetwork = google_compute_subnetwork.subnet.name
-    network_ip = "10.0.0.${2 + count.index}"
+    network_ip = cidrhost(var.cidr, 2 + count.index)
+    access_config {}
   }
 
   service_account {
@@ -28,7 +29,7 @@ resource "google_compute_instance" "master" {
     ssh-keys = join("\n", [for user, key in var.ssh_keys : "${user}:${file(key)}"])
   }
 
-  metadata_startup_script = file("scripts/startup_master.sh")
+  metadata_startup_script = file("scripts/startup.sh")
 }
 
 resource "google_compute_instance" "worker" {
@@ -38,7 +39,7 @@ resource "google_compute_instance" "worker" {
   name           = "worker-${count.index}"
   machine_type   = "n1-standard-2"
   zone           = "${var.GCP_REGION}-b"
-  can_ip_forward = false
+  can_ip_forward = true
   tags           = ["worker", "k8s"]
 
   boot_disk {
@@ -50,7 +51,8 @@ resource "google_compute_instance" "worker" {
 
   network_interface {
     subnetwork = google_compute_subnetwork.subnet.name
-    network_ip = "10.0.1.${2 + count.index}"
+    network_ip = cidrhost(var.cidr, 258 + count.index)
+    access_config {}
   }
 
   service_account {
@@ -61,10 +63,11 @@ resource "google_compute_instance" "worker" {
     ssh-keys = join("\n", [for user, key in var.ssh_keys : "${user}:${file(key)}"])
   }
 
-  metadata_startup_script = file("scripts/startup_worker.sh")
+  metadata_startup_script = file("scripts/startup.sh")
 }
 
 resource "google_compute_instance" "bastion" {
+  count          = var.bastion_enabled ? 1 : 0
   depends_on     = [google_compute_subnetwork.subnet]
   name           = "bastion"
   machine_type   = "n1-standard-2"
@@ -81,7 +84,7 @@ resource "google_compute_instance" "bastion" {
 
   network_interface {
     subnetwork = google_compute_subnetwork.subnet.name
-    network_ip = "10.0.2.8"
+    network_ip = cidrhost(var.cidr, 514 + count.index)
     access_config {
     }
   }
@@ -94,5 +97,5 @@ resource "google_compute_instance" "bastion" {
     ssh-keys = join("\n", [for user, key in var.ssh_keys : "${user}:${file(key)}"])
   }
 
-  metadata_startup_script = file("scripts/startup_bastion.sh")
+  metadata_startup_script = file("scripts/startup.sh")
 }
